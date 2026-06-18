@@ -51,7 +51,7 @@ async def start_command(message: Message, state: FSMContext):
         return
 
     await message.answer(
-        "👋 <b>Приветствую!</b>\nДля вступления в клан необходимо заполнить анкету.\n\n"
+        "👋 <b>Приветствую!</b>\nДля вступления в клан необходимо заполнить анкету. Бот не работает? Поддержка - @dfafdafa.\n\n"
         "💰 <b>Вопрос 1:</b> Имеешь ли ты 1 млн шекелей?",
         parse_mode="HTML", reply_markup=get_yes_no_keyboard()
     )
