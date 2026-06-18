@@ -2,7 +2,9 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, StateFilter
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ChatMemberStatus
+# ИСПРАВЛЕНО: ChatMemberStatus теперь импортируется из aiogram.enums
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.enums import ChatMemberStatus 
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -17,7 +19,7 @@ GROUP_ID = -5296812258
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Список забаненных (хранится в оперативной памяти)
+# Список забаненных
 banned_users = set()
 
 class Form(StatesGroup):
@@ -34,7 +36,6 @@ def get_yes_no_keyboard():
          InlineKeyboardButton(text="❌ Нет", callback_data="no")]
     ])
 
-# Добавлена третья кнопка "Забанить"
 def get_moderation_keyboard(user_id: int):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Принять", callback_data=f"accept_{user_id}"),
@@ -42,13 +43,20 @@ def get_moderation_keyboard(user_id: int):
         [InlineKeyboardButton(text="🚫 Забанить", callback_data=f"ban_{user_id}")]
     ])
 
+# Проверка на админа
+async def is_admin(user_id: int) -> bool:
+    try:
+        member = await bot.get_chat_member(chat_id=GROUP_ID, user_id=user_id)
+        return member.status in [ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR]
+    except:
+        return False
+
 # --- Основные хендлеры ---
 
 @dp.message(Command("start"))
 async def start_command(message: Message, state: FSMContext):
-    # Проверка на бан при входе
     if message.from_user.id in banned_users:
-        await message.answer("⛔️ Вы заблокированы и не можете подать заявку.")
+        await message.answer("⛔️ Вы заблокированы.")
         return
 
     await message.answer(
@@ -60,7 +68,6 @@ async def start_command(message: Message, state: FSMContext):
 
 @dp.callback_query(F.data.in_({"yes", "no"}), StateFilter(Form.waiting_for_million, Form.waiting_for_pc, Form.waiting_for_kb, Form.waiting_for_discord))
 async def process_answers(call: CallbackQuery, state: FSMContext):
-    # Дополнительная проверка: если забанили в процессе заполнения
     if call.from_user.id in banned_users:
         await call.message.edit_text("⛔️ Вы были заблокированы.")
         await state.clear()
@@ -101,7 +108,7 @@ async def process_answers(call: CallbackQuery, state: FSMContext):
             await call.message.edit_text("✅ <b>Анкета отправлена!</b>\nОжидай решения.", parse_mode="HTML")
         except Exception as e:
             logging.error(f"Ошибка отправки: {e}")
-            await call.message.edit_text("❌ Ошибка отправки анкеты. Бот не в группе.")
+            await call.message.edit_text("❌ Ошибка отправки анкеты.")
         
         await state.clear()
         
@@ -138,15 +145,12 @@ async def reject(call: CallbackQuery):
     except: pass
     await call.answer()
 
-# Новый обработчик для бана
 @dp.callback_query(F.data.startswith("ban_"))
 async def ban_user(call: CallbackQuery):
     uid = int(call.data.split("_")[1])
-    banned_users.add(uid) # Добавляем в список
-    
+    banned_users.add(uid)
     await call.message.edit_reply_markup(reply_markup=None)
     await call.message.edit_text(call.message.html_text + "\n\n🚫 <b>Пользователь забанен!</b>", parse_mode="HTML")
-    
     try:
         await bot.send_message(uid, "🚫 <b>Вы забанены в боте.</b>", parse_mode="HTML")
     except: pass
