@@ -7,20 +7,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-# ТВОЙ ТОКЕН БОТА
-BOT_TOKEN = "8438014649:AAEFB_42u6_mAq1uViWmxPUkOi9AIgBVIYk"  # ← ВСТАВЬ СВОЙ ТОКЕН!
-
-# ID ГРУППЫ
+BOT_TOKEN = "7632708290:ТВОЙ_ТОКЕН"  # ← ВСТАВЬ СВОЙ ТОКЕН!
 GROUP_ID = -5296812258
 
-# Инициализация бота и диспетчера
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
-# Состояния для анкеты
 class Form(StatesGroup):
     waiting_for_million = State()
     waiting_for_age = State()
@@ -28,24 +22,20 @@ class Form(StatesGroup):
     waiting_for_kb = State()
     waiting_for_discord = State()
 
-# Клавиатура с вариантами ответов "Да / Нет"
 def get_yes_no_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Да", callback_data="yes"),
          InlineKeyboardButton(text="❌ Нет", callback_data="no")]
     ])
 
-# Клавиатура для модераторов (в группе)
 def get_moderation_keyboard(user_id: int):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ Принять", callback_data=f"accept_{user_id}"),
          InlineKeyboardButton(text="❌ Отказать", callback_data=f"reject_{user_id}")]
     ])
 
-# Хранилище для временных данных анкеты
 user_answers = {}
 
-# Команда /start
 @dp.message(Command("start"))
 async def start_command(message: Message, state: FSMContext):
     await message.answer(
@@ -58,7 +48,6 @@ async def start_command(message: Message, state: FSMContext):
     )
     await state.set_state(Form.waiting_for_million)
 
-# Шаг 1: 1 млн шекелей
 @dp.callback_query(StateFilter(Form.waiting_for_million), F.data == "yes")
 async def process_million_yes(callback: CallbackQuery, state: FSMContext):
     user_answers[callback.from_user.id] = {"million": "Да ✅"}
@@ -83,7 +72,6 @@ async def process_million_no(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Form.waiting_for_age)
     await callback.answer()
 
-# Шаг 2: Возраст
 @dp.message(Form.waiting_for_age)
 async def process_age(message: Message, state: FSMContext):
     try:
@@ -101,7 +89,6 @@ async def process_age(message: Message, state: FSMContext):
     except ValueError:
         await message.answer("❌ Пожалуйста, напиши число!")
 
-# Шаг 3: ПК
 @dp.callback_query(StateFilter(Form.waiting_for_pc), F.data == "yes")
 async def process_pc_yes(callback: CallbackQuery, state: FSMContext):
     if callback.from_user.id not in user_answers:
@@ -132,7 +119,6 @@ async def process_pc_no(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Form.waiting_for_kb)
     await callback.answer()
 
-# Шаг 4: КБ
 @dp.callback_query(StateFilter(Form.waiting_for_kb), F.data == "yes")
 async def process_kb_yes(callback: CallbackQuery, state: FSMContext):
     if callback.from_user.id not in user_answers:
@@ -163,7 +149,7 @@ async def process_kb_no(callback: CallbackQuery, state: FSMContext):
     await state.set_state(Form.waiting_for_discord)
     await callback.answer()
 
-# Шаг 5: Discord (ЗАВЕРШЕНИЕ)
+# ★★★ ГЛАВНОЕ ИСПРАВЛЕНИЕ ★★★
 @dp.callback_query(StateFilter(Form.waiting_for_discord), F.data == "yes")
 async def process_discord_yes(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
@@ -195,17 +181,16 @@ async def process_discord_yes(callback: CallbackQuery, state: FSMContext):
     )
     
     await callback.message.delete()
-    
     await callback.message.answer(
         "✅ <b>Анкета отправлена!</b>\n"
         "Ожидай решения модераторов.",
         parse_mode="HTML"
     )
     
-    # Удаляем данные пользователя
-    del user_answers[user_id]
+    if user_id in user_answers:
+        del user_answers[user_id]
     await state.clear()
-    await callback.answer()
+    await callback.answer("✅ Анкета отправлена!")
 
 @dp.callback_query(StateFilter(Form.waiting_for_discord), F.data == "no")
 async def process_discord_no(callback: CallbackQuery, state: FSMContext):
@@ -238,56 +223,49 @@ async def process_discord_no(callback: CallbackQuery, state: FSMContext):
     )
     
     await callback.message.delete()
-    
     await callback.message.answer(
         "✅ <b>Анкета отправлена!</b>\n"
         "Ожидай решения модераторов.",
         parse_mode="HTML"
     )
     
-    del user_answers[user_id]
+    if user_id in user_answers:
+        del user_answers[user_id]
     await state.clear()
-    await callback.answer()
+    await callback.answer("✅ Анкета отправлена!")
 
-# Обработка нажатий модераторов
+# Модерация
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept_user(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[1])
-    
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text(
         callback.message.html_text + "\n\n✅ <b>Принято модератором!</b>",
         parse_mode="HTML"
     )
-    
     await bot.send_message(
         user_id,
         "✅ <b>Вы были приняты в клан!</b>\n"
         "Вступите в наш чат: https://t.me/+Sd8sTfPW7bc1MTcy",
         parse_mode="HTML"
     )
-    
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("reject_"))
 async def reject_user(callback: CallbackQuery):
     user_id = int(callback.data.split("_")[1])
-    
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text(
         callback.message.html_text + "\n\n❌ <b>Отказано модератором!</b>",
         parse_mode="HTML"
     )
-    
     await bot.send_message(
         user_id,
         "❌ <b>Вы были не приняты в клан</b>",
         parse_mode="HTML"
     )
-    
     await callback.answer()
 
-# Запуск бота
 async def main():
     print("🚀 Бот запущен!")
     await dp.start_polling(bot)
