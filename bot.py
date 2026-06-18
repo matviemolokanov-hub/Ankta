@@ -12,11 +12,11 @@ from aiogram.fsm.storage.memory import MemoryStorage
 logging.basicConfig(level=logging.INFO)
 
 # ===== ДАННЫЕ =====
-BOT_TOKEN = "8438014649:AAEFB_42u6_mAq1uViWmxPUkOi9AIgBVIYk"
-GROUP_ID = -5296812258 
+BOT_TOKEN = "7632708290:ТВОЙ_ТОКЕН"
+GROUP_ID = -1005296812258 
 # ==================
 
-# Настройка бота с автоматическим парсингом HTML
+# Настройка бота с автоматическим парсингом HTML (теперь `<b>` будет жирным, а не текстом)
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 
@@ -51,12 +51,26 @@ async def start_command(message: Message, state: FSMContext):
     if message.from_user.id in banned_users:
         await message.answer("⛔️ Вы заблокированы.")
         return
-    await message.answer(
-        "👋 <b>Приветствую!</b>\nДля вступления в клан необходимо заполнить анкету.\n\n"
-        "💰 <b>Вопрос 1:</b> Имеешь ли ты 1 млн шекелей?\n\n"
-        "🆘 <i>Если возникли вопросы, пиши в поддержку:</i> @t.me/dfafdafa",
-        reply_markup=get_yes_no_keyboard()
+        
+    start_text = (
+        "👋 <b>Приветствую!</b>\n\n"
+        "<b>Что вы получите от нас ⁉️</b>\n"
+        "🦝 Личный бот клана с уведомлениями о погоде и стоках\n"
+        "🐙 Дружеский состав\n"
+        "🐝 Розыгрыши\n"
+        "🦊 Гарантированные призовые места\n\n"
+        "<b>Что требуется от вас ⁉️</b>\n"
+        "🦌 Возможность отыгрывать клановую битву\n"
+        "🧚 1M шекелей\n"
+        "🐼 Иметь пк и возможность отыгрывать клановую битву\n"
+        "🙏 12 лет 🙏\n\n"
+        "Мы не играем эту клановую битву, но мы активно начнем играть со следующей недели\n\n"
+        "Вступай в ряды Ч и Манки 🐵\n\n"
+        "🆘 <i>Если возникли вопросы, пиши в поддержку:</i> @t.me/dfafdafa\n\n"
+        "💰 <b>Вопрос 1: Имеешь ли ты 1 млн шекелей?</b>"
     )
+    
+    await message.answer(start_text, reply_markup=get_yes_no_keyboard())
     await state.set_state(Form.waiting_for_million)
 
 @dp.callback_query(F.data.in_({"yes", "no"}), StateFilter(Form.waiting_for_million, Form.waiting_for_pc, Form.waiting_for_kb, Form.waiting_for_discord))
@@ -71,24 +85,23 @@ async def process_answers(call: CallbackQuery, state: FSMContext):
     
     if current_state == Form.waiting_for_million:
         await state.update_data(million=answer_text)
-        await call.message.edit_text("🎂 <b>Вопрос 2:</b> Твой возраст?")
+        await call.message.edit_text("🎂 <b>Вопрос 2: Твой возраст?</b>")
         await state.set_state(Form.waiting_for_age)
         
     elif current_state == Form.waiting_for_pc:
         await state.update_data(pc=answer_text)
-        await call.message.edit_text("⚔️ <b>Вопрос 4:</b> Будешь отыгрывать КБ?", reply_markup=get_yes_no_keyboard())
+        await call.message.edit_text("⚔️ <b>Вопрос 4: Будешь отыгрывать КБ?</b>", reply_markup=get_yes_no_keyboard())
         await state.set_state(Form.waiting_for_kb)
         
     elif current_state == Form.waiting_for_kb:
         await state.update_data(kb=answer_text)
-        await call.message.edit_text("🎮 <b>Вопрос 5:</b> Имеешь ли Discord?", reply_markup=get_yes_no_keyboard())
+        await call.message.edit_text("🎮 <b>Вопрос 5: Имеешь ли Discord?</b>", reply_markup=get_yes_no_keyboard())
         await state.set_state(Form.waiting_for_discord)
         
     elif current_state == Form.waiting_for_discord:
         await state.update_data(discord=answer_text)
         await call.message.delete()
         
-        # 6 ЭТАП
         proof_text = (
             "📸 <b>ФИНАЛЬНЫЙ ЭТАП: ПОДТВЕРЖДЕНИЕ</b>\n\n"
             "1. Зайди в игру, напиши на табличке <b>Worz</b> и сделай скриншот <b>без обрезаний</b>.\n"
@@ -137,7 +150,7 @@ async def age(message: Message, state: FSMContext):
         await message.answer("❌ Введи число!")
         return
     await state.update_data(age=message.text)
-    await message.answer("💻 <b>Вопрос 3:</b> Имеешь ли ПК или облачный телефон?", reply_markup=get_yes_no_keyboard())
+    await message.answer("💻 <b>Вопрос 3: Имеешь ли ПК или облачный телефон?</b>", reply_markup=get_yes_no_keyboard())
     await state.set_state(Form.waiting_for_pc)
 
 # --- Модерация ---
