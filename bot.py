@@ -16,6 +16,7 @@ BOT_TOKEN = "8438014649:AAEFB_42u6_mAq1uViWmxPUkOi9AIgBVIYk"
 GROUP_ID = -5296812258 
 # ==================
 
+# Настройка бота с автоматическим парсингом HTML
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 
@@ -26,7 +27,7 @@ class Form(StatesGroup):
     waiting_for_age = State()
     waiting_for_kb = State()
     waiting_for_discord = State()
-    waiting_for_roblox = State() # Новый этап
+    waiting_for_roblox = State()
     waiting_for_proof = State()
 
 # --- Клавиатуры ---
@@ -116,12 +117,6 @@ async def roblox_nick(message: Message, state: FSMContext):
         
     await state.update_data(roblox=message.text)
     
-    # Удаляем сообщение с ником, чтобы не засорять чат
-    try:
-        await message.delete()
-    except:
-        pass
-        
     proof_text = (
         "📸 <b>ФИНАЛЬНЫЙ ЭТАП: ПОДТВЕРЖДЕНИЕ</b>\n\n"
         "1. Зайди в игру, напиши на табличке <b>Worz</b> и сделай скриншот <b>без обрезаний</b>.\n\n"
@@ -165,7 +160,8 @@ async def wrong_proof(message: Message):
 async def accept(call: CallbackQuery):
     uid = int(call.data.split("_")[1])
     await call.message.edit_caption(caption=call.message.caption + "\n\n✅ <b>Принято!</b>", reply_markup=None)
-    try: await bot.send_message(uid, "✅ <b>Вы приняты!</b>")
+    try: 
+        await bot.send_message(uid, "✅ <b>Вы приняты в клан!</b>\nПожалуйста вступите в группу: https://t.me/+Sd8sTfPW7bc1MTcy")
     except: pass
     await call.answer()
 
