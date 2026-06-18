@@ -83,7 +83,7 @@ async def process_answers(call: CallbackQuery, state: FSMContext):
         
     elif current_state == Form.waiting_for_pc:
         await state.update_data(pc=answer_text)
-        await call.message.edit_text("⚔️ <b>Вопрос 4:</b> Будешь отыгрывать КБ?", parse_mode="HTML", reply_markup=get_yes_no_keyboard())
+        await call.message.edit_text("⚔️ <b>Вопрос 4:</b> Будешь отыгрывать клановую битву ?", parse_mode="HTML", reply_markup=get_yes_no_keyboard())
         await state.set_state(Form.waiting_for_kb)
         
     elif current_state == Form.waiting_for_kb:
