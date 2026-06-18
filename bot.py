@@ -13,6 +13,8 @@ logging.basicConfig(level=logging.INFO)
 # ===== ДАННЫЕ =====
 BOT_TOKEN = "8438014649:AAEFB_42u6_mAq1uViWmxPUkOi9AIgBVIYk"
 GROUP_ID = -5296812258 
+# СЮДА ВСТАВЬ ССЫЛКУ НА ФОТО-ПРИМЕР (обязательно прямую ссылку на .jpg или .png)
+EXAMPLE_PHOTO_URL = "https://example.com/photo.jpg" 
 # ==================
 
 bot = Bot(token=BOT_TOKEN)
@@ -26,7 +28,7 @@ class Form(StatesGroup):
     waiting_for_pc = State()
     waiting_for_kb = State()
     waiting_for_discord = State()
-    waiting_for_proof = State() # Новое состояние для доказательств
+    waiting_for_proof = State()
 
 # --- Клавиатуры ---
 def get_yes_no_keyboard():
@@ -49,9 +51,8 @@ async def start_command(message: Message, state: FSMContext):
     if message.from_user.id in banned_users:
         await message.answer("⛔️ Вы заблокированы.")
         return
-
     await message.answer(
-        "👋 <b>Приветствую!</b>\nДля вступления в клан необходимо заполнить анкету. Бот не работает? Поддержка - @dfafdafa.\n\n"
+        "👋 <b>Приветствую!</b>\nДля вступления в клан необходимо заполнить анкету.\n\n"
         "💰 <b>Вопрос 1:</b> Имеешь ли ты 1 млн шекелей?",
         parse_mode="HTML", reply_markup=get_yes_no_keyboard()
     )
@@ -69,7 +70,7 @@ async def process_answers(call: CallbackQuery, state: FSMContext):
     
     if current_state == Form.waiting_for_million:
         await state.update_data(million=answer_text)
-        await call.message.edit_text("🎂 <b>Вопрос 2:</b> Твой возраст?\nНапиши число (например: 25)", parse_mode="HTML")
+        await call.message.edit_text("🎂 <b>Вопрос 2:</b> Твой возраст?", parse_mode="HTML")
         await state.set_state(Form.waiting_for_age)
         
     elif current_state == Form.waiting_for_pc:
@@ -84,53 +85,56 @@ async def process_answers(call: CallbackQuery, state: FSMContext):
         
     elif current_state == Form.waiting_for_discord:
         await state.update_data(discord=answer_text)
-        # Переход к доказательствам
-        await call.message.edit_text(
-            "📸 <b>Вопрос 6: Финальный этап</b>\n\n"
-            "1. Зайди в игру и напиши на табличке <b>Worz</b> (сделай скриншот).\n"
-            "2. Если имеешь облачный телефон, запиши видео как ты заходишь на него.\n\n"
-            "<i>Облачный телефон — это программа, которая позволяет запускать мобильные игры без нагрузки на устройство. Он обеспечивает стабильный круглосуточный запуск нескольких окон.</i>\n\n"
-            "👉 <b>Пришли фото или видео подтверждение сейчас:</b>", 
+        await call.message.delete()
+        
+        # Красивое оформление 6-го шага
+        proof_text = (
+            "📸 <b>ФИНАЛЬНЫЙ ЭТАП: ПОДТВЕРЖДЕНИЕ</b>\n\n"
+            "1. Зайди в игру, напиши на табличке <b>Worz</b> и сделай скриншот <b>без обрезаний</b>.\n"
+            "2. Если имеешь облачный телефон, запиши видео, как ты заходишь на него.\n\n"
+            "ℹ️ <i>Облачный телефон — это программа, которая позволяет запускать мобильные игры и приложения без нагрузки на устройство. Он обеспечивает стабильный круглосуточный запуск нескольких окон и позволяет одновременно управлять несколькими аккаунтами. UgPhone подходит для игр и приложений, позволяя пользователям получать доступ к глобальным магазинам приложений и играть в игры в любое время и в любом месте, не меняя устройства.</i>\n\n"
+            "👉 <b>Пришлите своё фото или видео в ответ на это сообщение:</b>"
+        )
+        
+        await bot.send_photo(
+            chat_id=call.from_user.id,
+            photo=EXAMPLE_PHOTO_URL,
+            caption=proof_text,
             parse_mode="HTML"
         )
         await state.set_state(Form.waiting_for_proof)
         
     await call.answer()
 
-# Обработка фото или видео
 @dp.message(Form.waiting_for_proof, F.photo | F.video)
 async def handle_proof(message: Message, state: FSMContext):
     data = await state.get_data()
-    
-    # Определяем тип медиа
     is_video = True if message.video else False
     file_id = message.video.file_id if is_video else message.photo[-1].file_id
     
-    text = (f"📋 <b>НОВАЯ АНКЕТА!</b>\n━━━━━━━━━━━━━━━━━━\n"
-            f"👤 <b>Имя:</b> {message.from_user.full_name} (ID: {message.from_user.id})\n"
-            f"💰 <b>1 млн:</b> {data.get('million')}\n"
-            f"🎂 <b>Возраст:</b> {data.get('age')} лет\n"
-            f"💻 <b>ПК:</b> {data.get('pc')}\n"
-            f"⚔️ <b>КБ:</b> {data.get('kb')}\n"
-            f"🎮 <b>Discord:</b> {data.get('discord')}\n━━━━━━━━━━━━━━━━━━")
+    caption = (f"📋 <b>НОВАЯ АНКЕТА!</b>\n\n"
+               f"👤 <b>Имя:</b> {message.from_user.full_name}\n"
+               f"💰 <b>1 млн:</b> {data.get('million')}\n"
+               f"🎂 <b>Возраст:</b> {data.get('age')}\n"
+               f"💻 <b>ПК/Телефон:</b> {data.get('pc')}\n"
+               f"⚔️ <b>КБ:</b> {data.get('kb')}\n"
+               f"🎮 <b>Discord:</b> {data.get('discord')}\n\n"
+               f"📸 <i>Доказательство от пользователя:</i>")
     
     try:
-        # Отправляем в группу с медиа
         if is_video:
-            await bot.send_video(GROUP_ID, video=file_id, caption=text, parse_mode="HTML", reply_markup=get_moderation_keyboard(message.from_user.id))
+            await bot.send_video(GROUP_ID, video=file_id, caption=caption, parse_mode="HTML", reply_markup=get_moderation_keyboard(message.from_user.id))
         else:
-            await bot.send_photo(GROUP_ID, photo=file_id, caption=text, parse_mode="HTML", reply_markup=get_moderation_keyboard(message.from_user.id))
-            
-        await message.answer("✅ <b>Анкета отправлена!</b>\nОжидай решения.", parse_mode="HTML")
+            await bot.send_photo(GROUP_ID, photo=file_id, caption=caption, parse_mode="HTML", reply_markup=get_moderation_keyboard(message.from_user.id))
+        await message.answer("✅ <b>Анкета успешно отправлена!</b>\nОжидай решения администрации.", parse_mode="HTML")
     except Exception as e:
         logging.error(f"Ошибка отправки: {e}")
-        await message.answer("❌ Ошибка отправки анкеты. Проверь настройки группы.")
-    
+        await message.answer("❌ Ошибка отправки анкеты.")
     await state.clear()
 
 @dp.message(Form.waiting_for_proof)
 async def wrong_proof(message: Message):
-    await message.answer("❌ Пожалуйста, пришлите именно <b>фото</b> или <b>видео</b>.", parse_mode="HTML")
+    await message.answer("❌ Пожалуйста, пришлите именно фото или видео!")
 
 @dp.message(Form.waiting_for_age)
 async def age(message: Message, state: FSMContext):
@@ -141,7 +145,7 @@ async def age(message: Message, state: FSMContext):
     await message.answer("💻 <b>Вопрос 3:</b> Имеешь ли ПК или облачный телефон?", parse_mode="HTML", reply_markup=get_yes_no_keyboard())
     await state.set_state(Form.waiting_for_pc)
 
-# --- Обработка модерации (не менялась) ---
+# --- Обработка модерации ---
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept(call: CallbackQuery):
     uid = int(call.data.split("_")[1])
