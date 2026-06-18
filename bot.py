@@ -3,7 +3,6 @@ import logging
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, StateFilter
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.enums import ChatMemberStatus
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -13,8 +12,6 @@ logging.basicConfig(level=logging.INFO)
 # ===== ДАННЫЕ =====
 BOT_TOKEN = "8438014649:AAEFB_42u6_mAq1uViWmxPUkOi9AIgBVIYk"
 GROUP_ID = -5296812258 
-# СЮДА ВСТАВЬ ССЫЛКУ НА ФОТО-ПРИМЕР (обязательно прямую ссылку на .jpg или .png)
-EXAMPLE_PHOTO_URL = "https://example.com/photo.jpg" 
 # ==================
 
 bot = Bot(token=BOT_TOKEN)
@@ -53,7 +50,8 @@ async def start_command(message: Message, state: FSMContext):
         return
     await message.answer(
         "👋 <b>Приветствую!</b>\nДля вступления в клан необходимо заполнить анкету.\n\n"
-        "💰 <b>Вопрос 1:</b> Имеешь ли ты 1 млн шекелей?",
+        "💰 <b>Вопрос 1:</b> Имеешь ли ты 1 млн шекелей?\n\n"
+        "🆘 <i>Если возникли вопросы, пиши в поддержку:</i> @t.me/dfafdafa",
         parse_mode="HTML", reply_markup=get_yes_no_keyboard()
     )
     await state.set_state(Form.waiting_for_million)
@@ -87,7 +85,7 @@ async def process_answers(call: CallbackQuery, state: FSMContext):
         await state.update_data(discord=answer_text)
         await call.message.delete()
         
-        # Красивое оформление 6-го шага
+        # 6 ЭТАП (Инструкция без фото)
         proof_text = (
             "📸 <b>ФИНАЛЬНЫЙ ЭТАП: ПОДТВЕРЖДЕНИЕ</b>\n\n"
             "1. Зайди в игру, напиши на табличке <b>Worz</b> и сделай скриншот <b>без обрезаний</b>.\n"
@@ -95,15 +93,9 @@ async def process_answers(call: CallbackQuery, state: FSMContext):
             "ℹ️ <i>Облачный телефон — это программа, которая позволяет запускать мобильные игры и приложения без нагрузки на устройство. Он обеспечивает стабильный круглосуточный запуск нескольких окон и позволяет одновременно управлять несколькими аккаунтами. UgPhone подходит для игр и приложений, позволяя пользователям получать доступ к глобальным магазинам приложений и играть в игры в любое время и в любом месте, не меняя устройства.</i>\n\n"
             "👉 <b>Пришлите своё фото или видео в ответ на это сообщение:</b>"
         )
-        
-        await bot.send_photo(
-            chat_id=call.from_user.id,
-            photo=EXAMPLE_PHOTO_URL,
-            caption=proof_text,
-            parse_mode="HTML"
-        )
+        await call.message.answer(proof_text, parse_mode="HTML")
         await state.set_state(Form.waiting_for_proof)
-        
+
     await call.answer()
 
 @dp.message(Form.waiting_for_proof, F.photo | F.video)
@@ -119,14 +111,14 @@ async def handle_proof(message: Message, state: FSMContext):
                f"💻 <b>ПК/Телефон:</b> {data.get('pc')}\n"
                f"⚔️ <b>КБ:</b> {data.get('kb')}\n"
                f"🎮 <b>Discord:</b> {data.get('discord')}\n\n"
-               f"📸 <i>Доказательство от пользователя:</i>")
+               f"📸 <i>Доказательство:</i>")
     
     try:
         if is_video:
             await bot.send_video(GROUP_ID, video=file_id, caption=caption, parse_mode="HTML", reply_markup=get_moderation_keyboard(message.from_user.id))
         else:
             await bot.send_photo(GROUP_ID, photo=file_id, caption=caption, parse_mode="HTML", reply_markup=get_moderation_keyboard(message.from_user.id))
-        await message.answer("✅ <b>Анкета успешно отправлена!</b>\nОжидай решения администрации.", parse_mode="HTML")
+        await message.answer("✅ <b>Анкета успешно отправлена!</b>\nОжидай решения администрации.")
     except Exception as e:
         logging.error(f"Ошибка отправки: {e}")
         await message.answer("❌ Ошибка отправки анкеты.")
@@ -145,12 +137,12 @@ async def age(message: Message, state: FSMContext):
     await message.answer("💻 <b>Вопрос 3:</b> Имеешь ли ПК или облачный телефон?", parse_mode="HTML", reply_markup=get_yes_no_keyboard())
     await state.set_state(Form.waiting_for_pc)
 
-# --- Обработка модерации ---
+# --- Модерация ---
 @dp.callback_query(F.data.startswith("accept_"))
 async def accept(call: CallbackQuery):
     uid = int(call.data.split("_")[1])
     await call.message.edit_caption(caption=call.message.caption + "\n\n✅ <b>Принято!</b>", reply_markup=None, parse_mode="HTML")
-    try: await bot.send_message(uid, "✅ <b>Вы приняты!</b>\nВступите в чат: https://t.me/+Sd8sTfPW7bc1MTcy", parse_mode="HTML")
+    try: await bot.send_message(uid, "✅ <b>Вы приняты!</b>", parse_mode="HTML")
     except: pass
     await call.answer()
 
