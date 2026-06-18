@@ -9,7 +9,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 logging.basicConfig(level=logging.INFO)
 
-BOT_TOKEN = "7632708290:ТВОЙ_ТОКЕН"  # ← ВСТАВЬ СВОЙ ТОКЕН!
+BOT_TOKEN = "8438014649:AAEFB_42u6_mAq1uViWmxPUkOi9AIgBVIYk"  # ← ВСТАВЬ СВОЙ ТОКЕН!
 GROUP_ID = -5296812258
 
 bot = Bot(token=BOT_TOKEN)
