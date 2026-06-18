@@ -11,7 +11,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 logging.basicConfig(level=logging.INFO)
 
 # ТВОЙ ТОКЕН БОТА
-BOT_TOKEN = "7632708290:ВАШ_ТОКЕН"  # ← ВСТАВЬ СВОЙ ТОКЕН!
+BOT_TOKEN = "8438014649:AAEFB_42u6_mAq1uViWmxPUkOi9AIgBVIYk"  # ← ВСТАВЬ СВОЙ ТОКЕН!
 
 # ID ГРУППЫ
 GROUP_ID = -5296812258
