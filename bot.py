@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 # ===== ДАННЫЕ =====
 BOT_TOKEN = "8438014649:AAEFB_42u6_mAq1uViWmxPUkOi9AIgBVIYk"
-GROUP_ID = -1005296812258 
+GROUP_ID = -5296812258 
 # ==================
 
 # Настройка бота с автоматическим парсингом HTML (теперь `<b>` будет жирным, а не текстом)
